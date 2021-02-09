@@ -109,6 +109,8 @@ pairs(dataAll[,2:4], pch = 19,  cex = 0.5,
 ```
 
 ```{r}
+install.packages("lmer4")
+library(lme4)
 # Does session number have an effect on convergent thinking?
 
 ggplot(dataAll, aes(x=as.factor(Session), y=Convergent_Pasta)) + 
