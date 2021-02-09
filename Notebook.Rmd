@@ -1,17 +1,28 @@
 ---
-title: "CreativityAnalysis"
+title: "Notebook"
+knit: (function(input_file, encoding) { out_dir <- 'docs'; rmarkdown::render(input_file,
+  encoding=encoding, output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  html_notebook: default
 author: "CS"
 date: "2/9/2021"
-output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
 ```{r}
 
-install.packages("dplyr")
 library(dplyr)
 
 ## report mean ki per ROI
@@ -25,7 +36,6 @@ dataMNI <- read.csv('~/Dropbox/DCCN/Creativity/roi_results_mni.csv')
 ```
 
 ```{r}
-install.packages("tidyverse")
 library(tidyverse)
 
 ## graph the distribution in box plot
@@ -61,6 +71,7 @@ ggplot(dataNative, aes(x=ROI, y=meanRoiContrastEstimate)) +
     coord_flip()
 
 ```
+
 ```{r}
 ## look at the density plot
 
@@ -71,7 +82,6 @@ ggplot(dataNative, aes(x=meanRoiContrastEstimate, group=ROI)) +
 
 ```{r}
 ## Ruben shared that we are only using native space and only whole caudate, putamen and VS
-install.packages("sjPlot")
 library(sjPlot)
 dataAll <- read.csv('~/Dropbox/DCCN/Creativity/CreativityIDsheet_MissingDataRemoved.csv')
 
@@ -109,7 +119,7 @@ pairs(dataAll[,2:4], pch = 19,  cex = 0.5,
 ```
 
 ```{r}
-install.packages("lmer4")
+
 library(lme4)
 # Does session number have an effect on convergent thinking?
 
@@ -151,7 +161,6 @@ print(summary(SessionEffect2), corr=F) # print summary without fixed effect corr
 plot_model(SessionEffect2, type = "pred", show.data=TRUE, terms = c("Session"))
 
 ```
-
 ```{r}
 ## look at the correlation between convergent and divergent thinking for each session
 my_cols <- c("#00AFBB", "#E7B800", "#FC4E07")  
@@ -509,11 +518,6 @@ qqnorm(residuals(PBO_Caudate_FactorizedScore))
 
 
 ```
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 
 
