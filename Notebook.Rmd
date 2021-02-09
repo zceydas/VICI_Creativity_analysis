@@ -1,14 +1,5 @@
 ---
 title: "Notebook"
-knit: (function(input_file, encoding) { out_dir <- 'docs'; rmarkdown::render(input_file,
-  encoding=encoding, output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
-output:
-  html_document:
-    df_print: paged
-  pdf_document: default
-  html_notebook: default
-author: "CS"
-date: "2/9/2021"
 ---
 
 ```{r setup, include=FALSE}
