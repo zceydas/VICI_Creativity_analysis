@@ -1,0 +1,14 @@
+name: CreativityData
+navbar: 
+  left: 
+    - 
+      href: index.html
+      text: Home
+    - 
+      href: Notebook.html
+      text: About
+  title: "Creativity Analysis"
+output: 
+  html_document: ~
+  theme: cosmo
+output_dir: docs
