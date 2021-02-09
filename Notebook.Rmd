@@ -1,0 +1,518 @@
+---
+title: "CreativityAnalysis"
+author: "CS"
+date: "2/9/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+install.packages("dplyr")
+library(dplyr)
+
+## report mean ki per ROI
+
+dataMNI <- read.csv('~/Dropbox/DCCN/Creativity/roi_results_mni.csv')
+  dataMNI %>%
+  group_by(ROI) %>%
+  dplyr::summarise(mean = mean(meanRoiContrastEstimate),
+  sd = sd(meanRoiContrastEstimate)) 
+    
+```
+
+```{r}
+install.packages("tidyverse")
+library(tidyverse)
+
+## graph the distribution in box plot
+
+ggplot(dataMNI, aes(x=ROI, y=meanRoiContrastEstimate)) + 
+    geom_boxplot() + 
+    coord_flip()
+```
+```{r}
+## look at the density plot
+
+ggplot(dataMNI, aes(x=meanRoiContrastEstimate, group=ROI)) + 
+    geom_line(stat="density")
+```
+
+```{r}
+## report mean ki per ROI
+
+dataNative <- read.csv('~/Dropbox/DCCN/Creativity/roi_results_native.csv')
+  dataNative %>%
+  group_by(ROI) %>%
+  dplyr::summarise(mean = mean(meanRoiContrastEstimate),
+  sd = sd(meanRoiContrastEstimate)) 
+
+```
+
+```{r}
+
+## graph the distribution in box plot
+
+ggplot(dataNative, aes(x=ROI, y=meanRoiContrastEstimate)) + 
+    geom_boxplot() + 
+    coord_flip()
+
+```
+```{r}
+## look at the density plot
+
+ggplot(dataNative, aes(x=meanRoiContrastEstimate, group=ROI)) + 
+    geom_line(stat="density")
+```
+
+
+```{r}
+## Ruben shared that we are only using native space and only whole caudate, putamen and VS
+install.packages("sjPlot")
+library(sjPlot)
+dataAll <- read.csv('~/Dropbox/DCCN/Creativity/CreativityIDsheet_MissingDataRemoved.csv')
+
+# turn drug conditions into factor levels
+dataAll$Drug <- factor(dataAll$Drug, levels = c("MPH","SUL","PBO"));
+
+# set contrasts to sum-to-zero
+options(contrasts=c("contr.sum", "contr.poly"))
+
+# set two dataframes for the contrast between MPH and PBO - between SUL and PBO
+df_MPH <- dplyr::filter(dataAll, Drug %in% c("MPH","PBO"))  
+df_SUL <- dplyr::filter(dataAll, Drug %in% c("SUL","PBO"))
+
+```
+
+```{r}
+SelectData <- dataNative[grepl("wholeCaudate", dataNative[["ROI"]]) | grepl("wholePutamen", dataNative[["ROI"]]) | grepl("VS", dataNative[["ROI"]]), ]
+
+SelectData <- SelectData[-grep("_", SelectData$ROI),]
+
+ggplot(SelectData, aes(x=ROI, y=meanRoiContrastEstimate)) + 
+    geom_boxplot() + 
+    coord_flip()
+
+ggplot(SelectData, aes(x=meanRoiContrastEstimate, group=ROI)) + 
+    geom_line(stat="density")
+```
+```{r}
+
+# How do different ROI Ki s relate to each other?
+my_cols <- c("#00AFBB", "#E7B800", "#FC4E07")  
+pairs(dataAll[,2:4], pch = 19,  cex = 0.5,
+      lower.panel=NULL)
+
+```
+
+```{r}
+# Does session number have an effect on convergent thinking?
+
+ggplot(dataAll, aes(x=as.factor(Session), y=Convergent_Pasta)) + 
+    geom_boxplot(fill="slateblue", alpha=0.2) + 
+    xlab("Session")
+
+# Total number of generated ideas
+
+SessionEffectTotal <- lmer(Total ~ 1 + Session + (1 + Session|| ID), data = dataAll, REML=F) 
+print(summary(SessionEffectTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SessionEffectTotal, type = "pred", show.data=TRUE, terms = c("Session"))
+
+# Pure convergent scores
+
+SessionEffect <- lmer(Convergent_Pasta ~ 1 + Session + (1 + Session|| ID), data = dataAll, REML=F) 
+print(summary(SessionEffect), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SessionEffect, type = "pred", show.data=TRUE, terms = c("Session"))
+
+# convergent/divergent ratio
+
+SessionEffectRatio <- lmer(Con_Div ~ 1 + Session + (1 + Session|| ID), data = dataAll, REML=F) 
+print(summary(SessionEffectRatio), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SessionEffectRatio, type = "pred", show.data=TRUE,terms = c("Session"))
+
+
+```
+
+```{r}
+
+# Does session number have an effect on divergent thinking?
+
+ggplot(dataAll, aes(x=as.factor(Session), y=Divergent_Pasta)) + 
+    geom_boxplot(fill="slateblue", alpha=0.2) + 
+    xlab("Session")
+
+SessionEffect2 <- lmer(Divergent_Pasta ~ 1 + Session + (1 + Session|| ID), data = dataAll, REML=F) 
+print(summary(SessionEffect2), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SessionEffect2, type = "pred", show.data=TRUE, terms = c("Session"))
+
+```
+
+```{r}
+## look at the correlation between convergent and divergent thinking for each session
+my_cols <- c("#00AFBB", "#E7B800", "#FC4E07")  
+pairs(dataAll[,7:8], pch = 19,  cex = 0.5,
+      col = my_cols[dataAll$Session],
+      lower.panel=NULL)
+```
+
+```{r}
+
+# Does drug on its own have an effect on Convergent thinking?
+
+ggplot(dataAll, aes(x=as.factor(Drug), y=Convergent_Pasta)) + 
+    geom_boxplot(fill="slateblue", alpha=0.2) + 
+    xlab("Session")
+
+
+DrugEffect <- lmer(Convergent_Pasta ~ 1 + Drug + (1 | ID), data = df_MPH, REML=F) 
+print(summary(DrugEffect), corr=F) # print summary without fixed effect correlation matrix
+plot_model(DrugEffect, type = "pred", show.data=TRUE, terms = c("Drug"))
+
+# Drug effect in the presence of session?
+
+DrugAndSessionEffect <- lmer(Convergent_Pasta ~ 1 + Drug*Session + (1 | ID), data = df_MPH, REML=F) 
+print(summary(DrugAndSessionEffect), corr=F) # print summary without fixed effect correlation matrix
+plot_model(DrugAndSessionEffect, type = "pred", show.data=TRUE, terms = c("Drug","Session"))
+
+```
+
+```{r}
+# Does drug on its own have an effect on Divergent thinking?
+
+ggplot(dataAll, aes(x=as.factor(Drug), y=Divergent_Pasta)) + 
+    geom_boxplot(fill="slateblue", alpha=0.2) + 
+    xlab("Session")
+
+
+DrugEffect2 <- lmer(Divergent_Pasta ~ 1 + Drug + (1 | ID), data = df_MPH, REML=F) 
+print(summary(DrugEffect2), corr=F) # print summary without fixed effect correlation matrix
+plot_model(DrugEffect2, type = "pred", terms = c("Drug"))
+
+# Drug effect in the presence of session?
+
+DrugAndSessionEffect2 <- lmer(Divergent_Pasta ~ 1 + Drug* Session + (1 | ID), data = df_MPH, REML=F) 
+print(summary(DrugAndSessionEffect2), corr=F) # print summary without fixed effect correlation matrix
+plot_model(DrugAndSessionEffect2, type = "pred", terms = c("Drug","Session"))
+
+```
+
+```{r}
+# How do different ROI Ki s relate to each other?
+cols <- c(2:4, 7:8)
+my_cols <- c("#00AFBB", "#E7B800", "#FC4E07")  
+pairs(dataAll[,cols], pch = 19,  cex = 0.5,
+            col = my_cols[dataAll$Session],
+      lower.panel=NULL)
+```
+
+```{r}
+
+
+############################# Test the effects of Caudate Ki #############################################################
+
+## effects of MPH vs PBO below
+
+# pure Convergent score
+MPH_Caudate_PureConvergent <- lmer(Convergent_Pasta ~ 1 + Drug*Caudate_ki + Session + (1 | ID), data = df_MPH, REML=F) 
+print(summary(MPH_Caudate_PureConvergent), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Caudate_PureConvergent, type = "pred", terms = c("Caudate_ki","Session","Drug"))
+plot(MPH_Caudate_PureConvergent)  # Plot the model information
+qqnorm(residuals(MPH_Caudate_PureConvergent)) 
+# Convergent/Divergent ratio score
+MPH_Caudate_ConDivRatio <- lmer(Con_Div ~ 1 + Drug*Caudate_ki + Session + (1 | ID), data = df_MPH, REML=F)
+print(summary(MPH_Caudate_ConDivRatio), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Caudate_ConDivRatio, type = "pred", terms = c("Caudate_ki","Session","Drug"))
+plot(MPH_Caudate_ConDivRatio)
+qqnorm(residuals(MPH_Caudate_ConDivRatio))
+# Convergent/Total ratio score
+MPH_Caudate_ConTotal <- lmer(Con_Total ~ 1 + Drug*Caudate_ki + Session + (1 | ID), data = df_MPH, REML=F)
+print(summary(MPH_Caudate_ConTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Caudate_ConTotal, type = "pred", terms = c("Caudate_ki","Session","Drug"))
+plot(MPH_Caudate_ConTotal)
+qqnorm(residuals(MPH_Caudate_ConTotal))
+# Convergent-Divergent difference score 
+MPH_Caudate_ConDifference <- lmer(ConDiv_Dif ~ 1 + Drug*Caudate_ki + Session + (1 | ID), data = df_MPH, REML=F)
+print(summary(MPH_Caudate_ConDifference), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Caudate_ConDifference, type = "pred", terms = c("Caudate_ki","Session","Drug"))
+plot(MPH_Caudate_ConDifference)
+qqnorm(residuals(MPH_Caudate_ConDifference))
+# Divergent/Total ratio score
+MPH_Caudate_DivTotal <- lmer(Div_Total ~ 1 + Drug*Caudate_ki + Session + (1 | ID), data = df_MPH, REML=F)
+print(summary(MPH_Caudate_DivTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Caudate_DivTotal, type = "pred", terms = c("Caudate_ki","Session","Drug"))
+plot(MPH_Caudate_DivTotal)
+qqnorm(residuals(MPH_Caudate_DivTotal))
+
+## effects of SUL vs PBO below
+
+# pure Convergent score
+SUL_Caudate_PureConvergent <- lmer(Convergent_Pasta ~ 1 + Drug*Caudate_ki + Session + (1 | ID), data = df_SUL, REML=F) 
+print(summary(SUL_Caudate_PureConvergent), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Caudate_PureConvergent, type = "pred", terms = c("Caudate_ki","Session","Drug"))
+plot(SUL_Caudate_PureConvergent)
+qqnorm(residuals(SUL_Caudate_PureConvergent))
+# Convergent/Divergent ratio score
+SUL_Caudate_ConDivRatio <- lmer(Con_Div ~ 1 + Drug*Caudate_ki + Session + (1 | ID), data = df_SUL, REML=F)
+print(summary(SUL_Caudate_ConDivRatio), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Caudate_ConDivRatio, type = "pred", terms = c("Caudate_ki","Session","Drug"))
+plot(SUL_Caudate_ConDivRatio)
+qqnorm(residuals(SUL_Caudate_ConDivRatio))
+# Convergent/Total ratio score
+SUL_Caudate_ConTotal <- lmer(Con_Total ~ 1 + Drug*Caudate_ki + Session + (1 | ID), data = df_SUL, REML=F)
+print(summary(SUL_Caudate_ConTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Caudate_ConTotal, type = "pred", terms = c("Caudate_ki","Session","Drug"))
+plot(SUL_Caudate_ConTotal)
+qqnorm(residuals(SUL_Caudate_ConTotal))
+# Convergent-Divergent difference score 
+SUL_Caudate_ConDifference <- lmer(ConDiv_Dif ~ 1 + Drug*Caudate_ki + Session + (1 | ID), data = df_SUL, REML=F)
+print(summary(SUL_Caudate_ConDifference), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Caudate_ConDifference, type = "pred", terms = c("Caudate_ki","Session","Drug"))
+plot(SUL_Caudate_ConDifference)
+qqnorm(residuals(SUL_Caudate_ConDifference))
+# Divergent/Total ratio score
+SUL_Caudate_DivTotal <- lmer(Div_Total ~ 1 + Drug*Caudate_ki + Session + (1 | ID), data = df_SUL, REML=F)
+print(summary(SUL_Caudate_DivTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Caudate_DivTotal, type = "pred", terms = c("Caudate_ki","Session","Drug"))
+plot(SUL_Caudate_DivTotal)
+qqnorm(residuals(SUL_Caudate_DivTotal))
+
+
+```
+
+```{r}
+
+############################# Test the effects of Putamen Ki #############################################################
+
+## effects of MPH vs PBO below
+
+# pure Convergent score
+MPH_Putamen_PureConvergent <- lmer(Convergent_Pasta ~ 1 + Drug*Putamen_ki + Session + (1 | ID), data = df_MPH, REML=F) 
+print(summary(MPH_Putamen_PureConvergent), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Putamen_PureConvergent, type = "pred", terms = c("Putamen_ki","Session","Drug"))
+# Convergent/Divergent ratio score
+MPH_Putamen_ConDivRatio <- lmer(Con_Div ~ 1 + Drug*Putamen_ki + Session + (1 | ID), data = df_MPH, REML=F)
+print(summary(MPH_Putamen_ConDivRatio), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Putamen_ConDivRatio, type = "pred", terms = c("Putamen_ki","Session","Drug"))
+# Convergent/Total ratio score
+MPH_Putamen_ConTotal <- lmer(Con_Total ~ 1 + Drug*Putamen_ki + Session + (1 | ID), data = df_MPH, REML=F)
+print(summary(MPH_Putamen_ConTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Putamen_ConTotal, type = "pred", terms = c("Putamen_ki","Session","Drug"))
+# Convergent-Divergent difference score 
+MPH_Putamen_ConDifference <- lmer(ConDiv_Dif ~ 1 + Drug*Putamen_ki + Session + (1 | ID), data = df_MPH, REML=F)
+print(summary(MPH_Putamen_ConDifference), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Putamen_ConDifference, type = "pred", terms = c("Putamen_ki","Session","Drug"))
+plot(MPH_Putamen_ConDifference)
+qqnorm(residuals(MPH_Putamen_ConDifference))
+# Divergent/Total ratio score
+MPH_Putamen_DivTotal <- lmer(Div_Total ~ 1 + Drug*Putamen_ki + Session + (1 | ID), data = df_MPH, REML=F)
+print(summary(MPH_Putamen_DivTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Putamen_DivTotal, type = "pred", terms = c("Putamen_ki","Session","Drug"))
+
+## effects of SUL vs PBO below
+
+# pure Convergent score
+SUL_Putamen_PureConvergent <- lmer(Convergent_Pasta ~ 1 + Drug*Putamen_ki + Session + (1 | ID), data = df_SUL, REML=F) 
+print(summary(SUL_Putamen_PureConvergent), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Putamen_PureConvergent, type = "pred", terms = c("Putamen_ki","Session","Drug"))
+# Convergent/Divergent ratio score
+SUL_Putamen_ConDivRatio <- lmer(Con_Div ~ 1 + Drug*Putamen_ki + Session + (1 | ID), data = df_SUL, REML=F)
+print(summary(SUL_Putamen_ConDivRatio), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Putamen_ConDivRatio, type = "pred", terms = c("Putamen_ki","Session","Drug"))
+# Convergent/Total ratio score
+SUL_Putamen_ConTotal <- lmer(Con_Total ~ 1 + Drug*Putamen_ki + Session + (1 | ID), data = df_SUL, REML=F)
+print(summary(SUL_Putamen_ConTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Putamen_ConTotal, type = "pred", terms = c("Putamen_ki","Session","Drug"))
+# Convergent-Divergent difference score 
+SUL_Putamen_ConDifference <- lmer(ConDiv_Dif ~ 1 + Drug*Putamen_ki + Session + (1 | ID), data = df_SUL, REML=F)
+print(summary(SUL_Putamen_ConDifference), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Putamen_ConDifference, type = "pred", terms = c("Putamen_ki","Session","Drug"))
+plot(SUL_Putamen_ConDifference)
+qqnorm(residuals(SUL_Putamen_ConDifference))
+# Divergent/Total ratio score
+SUL_Putamen_DivTotal <- lmer(Div_Total ~ 1 + Drug*Putamen_ki + Session + (1 | ID), data = df_SUL, REML=F)
+print(summary(SUL_Putamen_DivTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Putamen_DivTotal, type = "pred", terms = c("Putamen_ki","Session","Drug"))
+```
+
+```{r}
+############################# Test the effects of VS Ki #############################################################
+
+## effects of MPH vs PBO below
+
+# pure Convergent score
+MPH_VS_PureConvergent <- lmer(Convergent_Pasta ~ 1 + Drug*VS_ki + Session + (1 | ID), data = df_MPH, REML=F) 
+print(summary(MPH_VS_PureConvergent), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_VS_PureConvergent, show.values=TRUE, value.offset = .3)
+plot_model(MPH_VS_PureConvergent,  type = "pred", terms = c("VS_ki","Session","Drug"))
+# Convergent/Divergent ratio score
+MPH_VS_ConDivRatio <- lmer(Con_Div ~ 1 + Drug*VS_ki + Session + (1 | ID), data = df_MPH, REML=F)
+print(summary(MPH_VS_ConDivRatio), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_VS_ConDivRatio, show.values=TRUE, value.offset = .3)
+plot_model(MPH_VS_ConDivRatio, type = "pred", terms = c("VS_ki","Session","Drug"))
+# Convergent/Total ratio score
+MPH_VS_ConTotal <- lmer(Con_Total ~ 1 + Drug*VS_ki + Session + (1 | ID), data = df_MPH, REML=F)
+print(summary(MPH_VS_ConTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_VS_ConTotal, show.values=TRUE, value.offset = .3)
+plot_model(MPH_VS_ConTotal, type = "pred", terms = c("VS_ki","Session","Drug"))
+# Convergent-Divergent difference score 
+MPH_VS_ConDifference <- lmer(ConDiv_Dif ~ 1 + Drug*VS_ki + Session + (1 | ID), data = df_MPH, REML=F)
+print(summary(MPH_VS_ConDifference), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_VS_ConDifference, type = "pred", terms = c("VS_ki","Session","Drug"))
+plot(MPH_VS_ConDifference)
+qqnorm(residuals(MPH_VS_ConDifference))
+# Divergent/Total ratio score
+MPH_VS_DivTotal <- lmer(Div_Total ~ 1 + Drug*VS_ki + Session + (1 | ID), data = df_MPH, REML=F)
+print(summary(MPH_VS_DivTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_VS_DivTotal, show.values=TRUE, value.offset = .3)
+plot_model(MPH_VS_DivTotal, type = "pred", terms = c("VS_ki","Session","Drug"))
+
+## effects of SUL vs PBO below
+
+# pure Convergent score
+SUL_VS_PureConvergent <- lmer(Convergent_Pasta ~ 1 + Drug*VS_ki + Session + (1 | ID), data = df_SUL, REML=F) 
+print(summary(SUL_VS_PureConvergent), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_VS_PureConvergent, show.values=TRUE, value.offset = .3)
+plot_model(SUL_VS_PureConvergent, type = "pred", terms = c("VS_ki","Session","Drug"))
+# Convergent/Divergent ratio score
+SUL_VS_ConDivRatio <- lmer(Con_Div ~ 1 + Drug*VS_ki + Session + (1 | ID), data = df_SUL, REML=F)
+print(summary(SUL_VS_ConDivRatio), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_VS_ConDivRatio, show.values=TRUE, value.offset = .3)
+plot_model(SUL_VS_ConDivRatio, type = "pred", terms = c("VS_ki","Session","Drug"))
+# Convergent/Total ratio score
+SUL_VS_ConTotal <- lmer(Con_Total ~ 1 + Drug*VS_ki + Session + (1 | ID), data = df_SUL, REML=F)
+print(summary(SUL_VS_ConTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_VS_ConTotal, show.values=TRUE, value.offset = .3)
+plot_model(SUL_VS_ConTotal, type = "pred", terms = c("VS_ki","Session","Drug"))
+# Convergent-Divergent difference score 
+SUL_VS_ConDifference <- lmer(ConDiv_Dif ~ 1 + Drug*VS_ki + Session + (1 | ID), data = df_SUL, REML=F)
+print(summary(SUL_VS_ConDifference), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_VS_ConDifference, type = "pred", terms = c("VS_ki","Session","Drug"))
+plot(SUL_VS_ConDifference)
+qqnorm(residuals(SUL_VS_ConDifference))
+# Divergent/Total ratio score
+SUL_VS_DivTotal <- lmer(Div_Total ~ 1 + Drug*VS_ki + Session + (1 | ID), data = df_SUL, REML=F)
+print(summary(SUL_VS_DivTotal), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_VS_DivTotal, show.values=TRUE, value.offset = .3)
+plot_model(SUL_VS_DivTotal, type = "pred", terms = c("VS_ki","Session","Drug"))
+
+
+```
+
+```{r}
+# Factorize the data into score types and test the effects of score type as a factor on scores (1=convergent, 2=divergent)
+
+FactorizedScores <- read.csv('~/Dropbox/DCCN/Creativity/CreativityIDsheet_MissingDataRemoved_ScoresFactorized.csv')
+
+# turn drug conditions into factor levels
+FactorizedScores$Drug <- factor(FactorizedScores$Drug, levels = c("MPH","SUL","PBO"));
+FactorizedScores$ScoreType <- factor(FactorizedScores$ScoreType);
+hs <- function(x) {
+    y <- 0.5*exp(-x)*(exp(2*x)-1)
+    return(y)
+}  # inverse sine transormation
+#FactorizedScores$Score <- hs(FactorizedScores$Score); # zscored the scores
+FactorizedScores$Score <-scale(FactorizedScores$Score, center = TRUE, scale = TRUE)
+
+# ScoreType 1 refers to convergent, 2 refers to divergent
+
+# set contrasts to sum-to-zero
+options(contrasts=c("contr.sum", "contr.poly"))
+
+# set two dataframes for the contrast between MPH and PBO - between SUL and PBO
+df_MPH_Factorized <- dplyr::filter(FactorizedScores, Drug %in% c("MPH","PBO"))  
+df_SUL_Factorized <- dplyr::filter(FactorizedScores, Drug %in% c("SUL","PBO"))
+
+```
+
+```{r}
+## effects of MPH vs PBO on factorized model
+
+MPH_VS_FactorizedScore <- lmer(Score ~ 1 + Drug*VS_ki*ScoreType + Session + (1 | ID), data = df_MPH_Factorized, REML=F) 
+print(summary(MPH_VS_FactorizedScore), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_VS_FactorizedScore, show.values=TRUE, value.offset = .3)
+plot_model(MPH_VS_FactorizedScore,  type = "pred", terms = c("VS_ki","ScoreType","Drug"))
+plot(MPH_VS_FactorizedScore)
+qqnorm(residuals(MPH_VS_FactorizedScore))
+
+MPH_Putamen_FactorizedScore <- lmer(Score ~ 1 + Drug*Putamen_ki*ScoreType + Session + (1 | ID), data = df_MPH_Factorized, REML=F) 
+print(summary(MPH_Putamen_FactorizedScore), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Putamen_FactorizedScore, show.values=TRUE, value.offset = .3)
+plot_model(MPH_Putamen_FactorizedScore,  type = "pred", terms = c("Putamen_ki","ScoreType","Drug"))
+plot(MPH_Putamen_FactorizedScore)
+qqnorm(residuals(MPH_Putamen_FactorizedScore))
+
+MPH_Caudate_FactorizedScore <- lmer(Score ~ 1 + Drug*Caudate_ki*ScoreType + Session + (1 | ID), data = df_MPH_Factorized, REML=F) 
+print(summary(MPH_Caudate_FactorizedScore), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Caudate_FactorizedScore, show.values=TRUE, value.offset = .3)
+plot_model(MPH_Caudate_FactorizedScore,  type = "pred", terms = c("Caudate_ki","ScoreType","Drug"))
+plot(MPH_Caudate_FactorizedScore)
+qqnorm(residuals(MPH_Caudate_FactorizedScore))
+```
+
+```{r}
+
+## effects of SUL vs PBO on factorized model
+
+
+SUL_VS_FactorizedScore <- lmer(Score ~ 1 + Drug*VS_ki*ScoreType + Session + (1 | ID), data = df_SUL_Factorized, REML=F) 
+print(summary(SUL_VS_FactorizedScore), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_VS_FactorizedScore, show.values=TRUE, value.offset = .3)
+plot_model(SUL_VS_FactorizedScore,  type = "pred", terms = c("VS_ki","ScoreType","Drug"))
+plot(SUL_VS_FactorizedScore)
+qqnorm(residuals(SUL_VS_FactorizedScore))
+
+SUL_Putamen_FactorizedScore <- lmer(Score ~ 1 + Drug*Putamen_ki*ScoreType + Session + (1 | ID), data = df_SUL_Factorized, REML=F) 
+print(summary(SUL_Putamen_FactorizedScore), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Putamen_FactorizedScore, show.values=TRUE, value.offset = .3)
+plot_model(SUL_Putamen_FactorizedScore,  type = "pred", terms = c("Putamen_ki","ScoreType","Drug"))
+plot(SUL_Putamen_FactorizedScore)
+qqnorm(residuals(SUL_Putamen_FactorizedScore))
+
+SUL_Caudate_FactorizedScore <- lmer(Score ~ 1 + Drug*Caudate_ki*ScoreType + Session + (1 | ID), data = df_SUL_Factorized, REML=F) 
+print(summary(SUL_Caudate_FactorizedScore), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Caudate_FactorizedScore, show.values=TRUE, value.offset = .3)
+plot_model(SUL_Caudate_FactorizedScore,  type = "pred", terms = c("Caudate_ki","ScoreType","Drug"))
+plot(SUL_Caudate_FactorizedScore)
+qqnorm(residuals(SUL_Caudate_FactorizedScore))
+```
+
+```{r}
+## effects of Ki during placebo on factorized model
+
+OnlyPBO <- dplyr::filter(FactorizedScores, Drug %in% c("PBO"))  
+
+PBO_VS_FactorizedScore <- lmer(Score ~ 1 + VS_ki*ScoreType + Session + (1 | ID), data = OnlyPBO, REML=F) 
+print(summary(PBO_VS_FactorizedScore), corr=F) # print summary without fixed effect correlation matrix
+plot_model(PBO_VS_FactorizedScore, show.values=TRUE, value.offset = .3)
+plot_model(PBO_VS_FactorizedScore,  type = "pred", terms = c("VS_ki","ScoreType"))
+plot(PBO_VS_FactorizedScore)
+qqnorm(residuals(PBO_VS_FactorizedScore))
+
+PBO_Putamen_FactorizedScore <- lmer(Score ~ 1 + Putamen_ki*ScoreType + Session + (1 | ID), data = OnlyPBO, REML=F) 
+print(summary(PBO_Putamen_FactorizedScore), corr=F) # print summary without fixed effect correlation matrix
+plot_model(PBO_Putamen_FactorizedScore, show.values=TRUE, value.offset = .3)
+plot_model(PBO_Putamen_FactorizedScore,  type = "pred", terms = c("Putamen_ki","ScoreType"))
+plot(PBO_Putamen_FactorizedScore)
+qqnorm(residuals(PBO_Putamen_FactorizedScore))
+
+PBO_Caudate_FactorizedScore <- lmer(Score ~ 1 + Caudate_ki*ScoreType + Session + (1 | ID), data = OnlyPBO, REML=F) 
+print(summary(PBO_Caudate_FactorizedScore), corr=F) # print summary without fixed effect correlation matrix
+plot_model(PBO_Caudate_FactorizedScore, show.values=TRUE, value.offset = .3)
+plot_model(PBO_Caudate_FactorizedScore,  type = "pred", terms = c("Caudate_ki","ScoreType"))
+plot(PBO_Caudate_FactorizedScore)
+qqnorm(residuals(PBO_Caudate_FactorizedScore))
+
+
+```
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
