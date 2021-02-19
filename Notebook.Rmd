@@ -108,10 +108,34 @@ pairs(dataAll[,2:4], pch = 19,  cex = 0.5,
       lower.panel=NULL)
 
 ```
+```{r}
+
+# How do different measures s relate to each other?
+
+cols <- c(7:8, 15:18)
+my_cols <- c("#00AFBB", "#E7B800", "#FC4E07")  
+pairs(dataAll[,cols], pch = 19,  cex = 0.5,
+      lower.panel=NULL)
+
+
+```
+```{r}
+ggplot(dataAll, aes(x=KDOCSartistic)) + 
+    geom_line(stat="density")
+```
+```{r}
+
+# How do creativity subjective scores measures relate to Ki?
+
+cols <- c(2:4, 14)
+my_cols <- c("#00AFBB", "#E7B800", "#FC4E07")  
+pairs(dataAll[,cols], pch = 19,  cex = 0.5, 
+      lower.panel=NULL)
+
+```
 
 ```{r}
 
-library(lme4)
 # Does session number have an effect on convergent thinking?
 
 ggplot(dataAll, aes(x=as.factor(Session), y=Convergent_Pasta)) + 
@@ -137,6 +161,80 @@ print(summary(SessionEffectRatio), corr=F) # print summary without fixed effect 
 plot_model(SessionEffectRatio, type = "pred", show.data=TRUE,terms = c("Session"))
 
 
+```
+```{r}
+# Does session number have an effect on different ending ?
+
+ggplot(dataAll, aes(x=as.factor(Session), y=DifferentEnd)) + 
+    geom_boxplot(fill="slateblue", alpha=0.2) + 
+    xlab("Session")
+
+# Total number of different ending ideas
+
+SessionEffectDif <- lmer(DifferentEnd ~ 1 + Session + (1 + Session|| ID), data = dataAll, REML=F) 
+print(summary(SessionEffectDif), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SessionEffectDif, type = "pred", show.data=TRUE, terms = c("Session"))
+
+# Fluency
+
+SessionEffectFluency <- lmer(Fluency ~ 1 + Session + (1 + Session|| ID), data = dataAll, REML=F) 
+print(summary(SessionEffectFluency), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SessionEffectFluency, type = "pred", show.data=TRUE, terms = c("Session"))
+
+# Switch
+
+SessionEffectSwitch <- lmer(Switch ~ 1 + Session + (1 + Session|| ID), data = dataAll, REML=F) 
+print(summary(SessionEffectSwitch), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SessionEffectSwitch, type = "pred", show.data=TRUE, terms = c("Session"))
+
+# Repeat
+
+SessionEffectRepeat <- lmer(Repeat ~ 1 + Session + (1 + Session|| ID), data = dataAll, REML=F) 
+print(summary(SessionEffectRepeat), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SessionEffectRepeat, type = "pred", show.data=TRUE, terms = c("Session"))
+
+```
+```{r}
+MPH_Caudate_DifferentEnd <- lmer(DifferentEnd ~ 1 + Drug*Caudate_ki + Session + (1 | ID), data = df_MPH, REML=F) 
+print(summary(MPH_Caudate_DifferentEnd), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Caudate_DifferentEnd, type = "pred", terms = c("Caudate_ki","Session","Drug"))
+plot(MPH_Caudate_DifferentEnd)  # Plot the model information
+qqnorm(residuals(MPH_Caudate_DifferentEnd)) 
+```
+```{r}
+SUL_Caudate_DifferentEnd <- lmer(DifferentEnd ~ 1 + Drug*Caudate_ki + Session + (1 | ID), data = df_SUL, REML=F) 
+print(summary(SUL_Caudate_DifferentEnd), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Caudate_DifferentEnd, type = "pred", terms = c("Caudate_ki","Session","Drug"))
+plot(SUL_Caudate_DifferentEnd)  # Plot the model information
+qqnorm(residuals(SUL_Caudate_DifferentEnd)) 
+```
+```{r}
+MPH_Putamen_DifferentEnd <- lmer(DifferentEnd ~ 1 + Drug*Putamen_ki + Session + (1 | ID), data = df_MPH, REML=F) 
+print(summary(MPH_Putamen_DifferentEnd), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_Putamen_DifferentEnd, type = "pred", terms = c("Putamen_ki","Session","Drug"))
+plot(MPH_Putamen_DifferentEnd)  # Plot the model information
+qqnorm(residuals(MPH_Putamen_DifferentEnd)) 
+```
+```{r}
+MPH_VS_DifferentEnd <- lmer(DifferentEnd ~ 1 + Drug*VS_ki + Session + (1 | ID), data = df_MPH, REML=F) 
+print(summary(MPH_VS_DifferentEnd), corr=F) # print summary without fixed effect correlation matrix
+plot_model(MPH_VS_DifferentEnd, type = "pred", terms = c("VS_ki","Session","Drug"))
+plot(MPH_VS_DifferentEnd)  # Plot the model information
+qqnorm(residuals(MPH_VS_DifferentEnd)) 
+```
+```{r}
+SUL_VS_DifferentEnd <- lmer(DifferentEnd ~ 1 + Drug*VS_ki + Session + (1 | ID), data = df_SUL, REML=F) 
+print(summary(SUL_VS_DifferentEnd), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_VS_DifferentEnd, type = "pred", terms = c("VS_ki","Session","Drug"))
+plot(SUL_VS_DifferentEnd)  # Plot the model information
+qqnorm(residuals(SUL_VS_DifferentEnd)) 
+```
+```{r}
+SUL_Putamen_DifferentEnd <- lmer(DifferentEnd ~ 1 + Drug*Putamen_ki + Session + (1 | ID), data = df_SUL, REML=F) 
+print(summary(SUL_Putamen_DifferentEnd), corr=F) # print summary without fixed effect correlation matrix
+plot_model(SUL_Putamen_DifferentEnd, type = "pred", terms = c("Putamen_ki","Session","Drug"))
+plot(SUL_Putamen_DifferentEnd)  # Plot the model information
+qqnorm(residuals(SUL_Putamen_DifferentEnd)) 
 ```
 
 ```{r}
